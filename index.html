@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tawlead Dashboard 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            position: fixed;
+            right: 0; top: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, #0d0d2b 0%, #161645 100%);
+            border-left: 1px solid rgba(255,255,255,0.04);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .sidebar-brand h2 {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+
+        .sidebar-brand p { font-size: 11px; color: #555; margin-top: 4px; }
+
+        .sidebar-update {
+            padding: 12px 24px;
+            font-size: 11px;
+            color: #444;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .sidebar-update span { color: #00e676; font-weight: 600; }
+
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: all 0.25s;
+            border-right: 3px solid transparent;
+            color: #666;
+            font-size: 14px;
+            font-family: 'Tajawal';
+            background: none;
+            border-left: none;
+            border-top: none;
+            border-bottom: none;
+            width: 100%;
+            text-align: right;
+        }
+
+        .nav-btn:hover { background: rgba(0,212,255,0.04); color: #ccc; }
+
+        .nav-btn.active {
+            background: rgba(0,212,255,0.06);
+            border-right-color: #00d4ff;
+            color: #fff;
+        }
+
+        .nav-btn.active i { color: #00d4ff; }
+        .nav-btn i { font-size: 17px; width: 22px; text-align: center; }
+
+        .refresh-box { padding: 16px; }
+
+        .refresh-btn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-family: 'Tajawal';
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover { opacity: 0.88; transform: scale(1.02); }
+
+        /* === MAIN === */
+        .main {
+            margin-right: 250px;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .page-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .page-head h1 { font-size: 26px; font-weight: 700; }
+
+        .head-badges { display: flex; gap: 10px; }
+
+        .hbadge {
+            padding: 7px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .hbadge-live {
+            background: rgba(0,230,118,0.1);
+            color: #00e676;
+            animation: livePulse 2s infinite;
+        }
+
+        @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .hbadge-date { background: rgba(255,255,255,0.04); color: #666; }
+
+        /* === LOADING === */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0a0a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.6s;
+        }
+
+        .loading-screen.hide { opacity: 0; pointer-events: none; }
+
+        .spinner {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(255,255,255,0.08);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-screen p { margin-top: 20px; color: #555; font-size: 14px; }
+
+        /* === KPI CARDS === */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .kpi {
+            background: linear-gradient(135deg, #111130, #181850);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 18px;
+            padding: 22px;
+            transition: all 0.3s;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: cardIn 0.5s ease forwards;
+        }
+
+        .kpi:nth-child(1){animation-delay:0.05s}
+        .kpi:nth-child(2){animation-delay:0.1s}
+        .kpi:nth-child(3){animation-delay:0.15s}
+        .kpi:nth-child(4){animation-delay:0.2s}
+        .kpi:nth-child(5){animation-delay:0.25s}
+        .kpi:nth-child(6){animation-delay:0.3s}
+
+        @keyframes cardIn { to { opacity:1; transform:translateY(0); } }
+
+        .kpi:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0,212,255,0.15);
+            box-shadow: 0 12px 40px rgba(0,212,255,0.08);
+        }
+
+        .kpi-icon {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 14px;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .kpi-val { font-size: 26px; font-weight: 800; }
+        .kpi-sub { font-size: 11px; color: #444; margin-top: 6px; }
+
+        .kpi-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            margin-top: 8px;
+            padding: 3px 10px;
+            border-radius: 8px;
+        }
+
+        .kpi-change.up { background: rgba(0,230,118,0.1); color: #00e676; }
+        .kpi-change.down { background: rgba(255,82,82,0.1); color: #ff5252; }
+
+        /* === CHARTS === */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .ccard {
+            background: linear-gradient(135deg, #111130, #181850);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 18px;
+            padding: 24px;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: cardIn 0.5s ease forwards;
+            animation-delay: 0.2s;
+        }
+
+        .ccard.full { grid-column: 1 / -1; }
+
+        .ccard h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #bbb;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ccard h3 i { font-size: 16px; }
+
+        .chart-box { position: relative; height: 280px; }
+
+        /* === TABLES === */
+        .dtable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .dtable thead th {
+            background: rgba(0,212,255,0.06);
+            padding: 12px 14px;
+            text-align: right;
+            font-weight: 600;
+            color: #00d4ff;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .dtable tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            color: #999;
+        }
+
+        .dtable tbody tr:hover { background: rgba(255,255,255,0.015); }
+
+        .stbadge {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .st-green { background: rgba(0,230,118,0.12); color: #00e676; }
+        .st-yellow { background: rgba(255,193,7,0.12); color: #ffc107; }
+        .st-blue { background: rgba(0,212,255,0.12); color: #00d4ff; }
+        .st-red { background: rgba(255,82,82,0.12); color: #ff5252; }
+        .st-purple { background: rgba(124,58,237,0.12); color: #a78bfa; }
+
+        /* === PAGES === */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 1100px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 64px; }
+            .sidebar-brand h2 { font-size: 14px; }
+            .sidebar-brand p, .sidebar-update, .nav-btn span, .refresh-btn span { display: none; }
+            .nav-btn { justify-content: center; padding: 14px 0; }
+            .main { margin-right: 64px; padding: 16px; }
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+            .page-head { flex-direction: column; gap: 12px; align-items: flex-start; }
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #0a0a1a; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
+
+        .table-wrap { overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loader">
+    <div class="spinner"></div>
+    <p>جاري تحميل لوحة التحكم ...</p>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <h2>TAWLEAD</h2>
+        <p>Business Dashboard 2026</p>
+    </div>
+    <div class="sidebar-update">
+        آخر تحديث: <span id="updateTime">--</span>
+    </div>
+    <div class="sidebar-nav">
+        <button class="nav-btn active" onclick="go('ceo',this)">
+            <i class="fas fa-crown"></i><span>CEO Dashboard</span>
+        </button>
+        <button class="nav-btn" onclick="go('ops',this)">
+            <i class="fas fa-chart-line"></i><span>Operations</span>
+        </button>
+        <button class="nav-btn" onclick="go('hr',this)">
+            <i class="fas fa-users"></i><span>HR</span>
+        </button>
+        <button class="nav-btn" onclick="go('fin',this)">
+            <i class="fas fa-wallet"></i><span>Finance</span>
+        </button>
+        <button class="nav-btn" onclick="go('admin',this)">
+            <i class="fas fa-building"></i><span>Admin</span>
+        </button>
+    </div>
+    <div class="refresh-box">
+        <button class="refresh-btn" onclick="refreshAll()">
+            <i class="fas fa-sync-alt"></i><span>تحديث البيانات</span>
+        </button>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- ====== CEO ====== -->
+    <div id="pg-ceo" class="page active">
+        <div class="page-head">
+            <h1>🏢 CEO Dashboard</h1>
+            <div class="head-badges">
+                <span class="hbadge hbadge-live"><i class="fas fa-circle" style="font-size:8px"></i> مباشر</span>
+                <span class="hbadge hbadge-date">Q2 - 2026</span>
+            </div>
+        </div>
+        <div class="kpi-row" id="ceo-kpis"></div>
+        <div class="charts-row">
+            <div class="ccard">
+                <h3><i class="fas fa-chart-bar" style="color:#00d4ff"></i> الأداء الفعلي vs الهدف</h3>
+                <div class="chart-box"><canvas id="ceoBar"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-bullseye" style="color:#7c3aed"></i> نسب الإنجاز %</h3>
+                <div class="chart-box"><canvas id="ceoPolar"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-chart-area" style="color:#00e676"></i> الإيرادات الشهرية</h3>
+                <div class="chart-box"><canvas id="ceoLine"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-chart-pie" style="color:#ff9800"></i> توزيع الأقسام</h3>
+                <div class="chart-box"><canvas id="ceoPie"></canvas></div>
+            </div>
+            <div class="ccard full">
+                <h3><i class="fas fa-table" style="color:#00d4ff"></i> جدول KPIs التفصيلي</h3>
+                <div class="table-wrap" id="ceoTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== OPERATIONS ====== -->
+    <div id="pg-ops" class="page">
+        <div class="page-head">
+            <h1>📊 Operations</h1>
+            <div class="head-badges">
+                <span class="hbadge hbadge-live"><i class="fas fa-circle" style="font-size:8px"></i> مباشر</span>
+            </div>
+        </div>
+        <div class="kpi-row" id="ops-kpis"></div>
+        <div class="charts-row">
+            <div class="ccard">
+                <h3><i class="fas fa-chart-pie" style="color:#00d4ff"></i> حالة العملاء</h3>
+                <div class="chart-box"><canvas id="opsStatus"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-globe" style="color:#7c3aed"></i> مصادر العملاء</h3>
+                <div class="chart-box"><canvas id="opsSource"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-money-bill-wave" style="color:#00e676"></i> أعلى 8 صفقات</h3>
+                <div class="chart-box"><canvas id="opsDeals"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-funnel-dollar" style="color:#ff9800"></i> قمع المبيعات</h3>
+                <div class="chart-box"><canvas id="opsFunnel"></canvas></div>
+            </div>
+            <div class="ccard full">
+                <h3><i class="fas fa-table" style="color:#00d4ff"></i> تفاصيل العملاء</h3>
+                <div class="table-wrap" id="opsTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== HR ====== -->
+    <div id="pg-hr" class="page">
+        <div class="page-head">
+            <h1>👥 HR Dashboard</h1>
+            <div class="head-badges">
+                <span class="hbadge hbadge-live"><i class="fas fa-circle" style="font-size:8px"></i> مباشر</span>
+            </div>
+        </div>
+        <div class="kpi-row" id="hr-kpis"></div>
+        <div class="charts-row">
+            <div class="ccard">
+                <h3><i class="fas fa-sitemap" style="color:#00d4ff"></i> الموظفين حسب القسم</h3>
+                <div class="chart-box"><canvas id="hrDept"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-coins" style="color:#00e676"></i> الرواتب حسب القسم</h3>
+                <div class="chart-box"><canvas id="hrSalary"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-star" style="color:#ff9800"></i> تقييم الأداء</h3>
+                <div class="chart-box"><canvas id="hrPerf"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-clock" style="color:#7c3aed"></i> نسب الحضور %</h3>
+                <div class="chart-box"><canvas id="hrAttend"></canvas></div>
+            </div>
+            <div class="ccard full">
+                <h3><i class="fas fa-table" style="color:#00d4ff"></i> بيانات الموظفين</h3>
+                <div class="table-wrap" id="hrTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== FINANCE ====== -->
+    <div id="pg-fin" class="page">
+        <div class="page-head">
+            <h1>💰 Finance Dashboard</h1>
+            <div class="head-badges">
+                <span class="hbadge hbadge-live"><i class="fas fa-circle" style="font-size:8px"></i> مباشر</span>
+            </div>
+        </div>
+        <div class="kpi-row" id="fin-kpis"></div>
+        <div class="charts-row">
+            <div class="ccard">
+                <h3><i class="fas fa-chart-area" style="color:#00e676"></i> الإيرادات vs المصاريف</h3>
+                <div class="chart-box"><canvas id="finRevExp"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-chart-pie" style="color:#ff5252"></i> توزيع المصاريف</h3>
+                <div class="chart-box"><canvas id="finExpDist"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-chart-line" style="color:#00d4ff"></i> صافي الربح الشهري</h3>
+                <div class="chart-box"><canvas id="finProfit"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-piggy-bank" style="color:#7c3aed"></i> الميزانية vs الفعلي</h3>
+                <div class="chart-box"><canvas id="finBudget"></canvas></div>
+            </div>
+            <div class="ccard full">
+                <h3><i class="fas fa-table" style="color:#00d4ff"></i> القيود المالية</h3>
+                <div class="table-wrap" id="finTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== ADMIN ====== -->
+    <div id="pg-admin" class="page">
+        <div class="page-head">
+            <h1>🏢 Admin Dashboard</h1>
+            <div class="head-badges">
+                <span class="hbadge hbadge-live"><i class="fas fa-circle" style="font-size:8px"></i> مباشر</span>
+            </div>
+        </div>
+        <div class="kpi-row" id="admin-kpis"></div>
+        <div class="charts-row">
+            <div class="ccard">
+                <h3><i class="fas fa-chart-pie" style="color:#00d4ff"></i> البنود حسب الحالة</h3>
+                <div class="chart-box"><canvas id="admStatus"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-chart-bar" style="color:#7c3aed"></i> البنود حسب النوع</h3>
+                <div class="chart-box"><canvas id="admType"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-calendar-check" style="color:#00e676"></i> الجدول الزمني</h3>
+                <div class="chart-box"><canvas id="admTimeline"></canvas></div>
+            </div>
+            <div class="ccard">
+                <h3><i class="fas fa-exclamation-triangle" style="color:#ff9800"></i> الأولوية</h3>
+                <div class="chart-box"><canvas id="admPriority"></canvas></div>
+            </div>
+            <div class="ccard full">
+                <h3><i class="fas fa-table" style="color:#00d4ff"></i> تفاصيل المهام</h3>
+                <div class="table-wrap" id="adminTable"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ========================================
+// ⚙️ GOOGLE SHEETS URLs
+// ========================================
+// استبدل هذي الروابط بروابط Google Sheets حقك بعد ما تنشرها كـ CSV
+const SHEET_URLS = {
+    ceo: '',       // ← ضع رابط شيت CEO هنا
+    ops: '',       // ← ضع رابط شيت Operations هنا
+    hr: '',        // ← ضع رابط شيت HR هنا
+    fin: '',       // ← ضع رابط شيت Finance هنا
+    admin: ''      // ← ضع رابط شيت Admin هنا
+};
+
+// ========================================
+// 📊 DEMO DATA (تتحذف لما تربط Google Sheets)
+// ========================================
+const DEMO = {
+    ceo: [
+        { kpi: 'إجمالي الإيرادات', current: 485000, target: 550000, pct: 88 },
+        { kpi: 'صافي الربح', current: 142000, target: 180000, pct: 79 },
+        { kpi: 'عدد العملاء الجدد', current: 47, target: 60, pct: 78 },
+        { kpi: 'معدل التحويل', current: 32, target: 40, pct: 80 },
+        { kpi: 'رضا العملاء', current: 4.6, target: 5, pct: 92 },
+        { kpi: 'الإيميلات المرسلة', current: 1250, target: 1500, pct: 83 },
+        { kpi: 'الصفقات المغلقة', current: 18, target: 25, pct: 72 },
+        { kpi: 'نسبة الحضور', current: 94, target: 98, pct: 96 },
+    ],
+    ops: [
+        { client: 'شركة النخبة', status: 'مغلقة', value: 85000, source: 'LinkedIn', emails: 12, date: '2026-01-15' },
+        { client: 'مؤسسة الريادة', status: 'تفاوض', value: 62000, source: 'إحالة', emails: 8, date: '2026-02-01' },
+        { client: 'مجموعة الفرسان', status: 'مغلقة', value: 120000, source: 'موقع', emails: 15, date: '2026-01-20' },
+        { client: 'شركة البناء الذهبي', status: 'جديد', value: 45000, source: 'LinkedIn', emails: 3, date: '2026-03-05' },
+        { client: 'تقنية المستقبل', status: 'مغلقة', value: 95000, source: 'إعلان', emails: 18, date: '2026-02-10' },
+        { client: 'حلول رقمية', status: 'تفاوض', value: 38000, source: 'إحالة', emails: 6, date: '2026-03-12' },
+        { client: 'الشرق للتجارة', status: 'خاسرة', value: 55000, source: 'LinkedIn', emails: 9, date: '2026-01-25' },
+        { client: 'منصة سمارت', status: 'جديد', value: 72000, source: 'موقع', emails: 4, date: '2026-03-18' },
+        { client: 'مصنع الابتكار', status: 'تفاوض', value: 110000, source: 'إعلان', emails: 11, date: '2026-02-20' },
+        { client: 'شبكة الاتصال', status: 'مغلقة', value: 68000, source: 'إحالة', emails: 14, date: '2026-03-01' },
+        { client: 'خدمات السحاب', status: 'جديد', value: 42000, source: 'موقع', emails: 2, date: '2026-03-22' },
+        { client: 'تطوير بلس', status: 'خاسرة', value: 33000, source: 'LinkedIn', emails: 7, date: '2026-02-15' },
+    ],
+    hr: [
+        { name: 'أحمد محمد', dept: 'المبيعات', salary: 12000, perf: 4.5, attend: 96, join: '2024-03' },
+        { name: 'سارة علي', dept: 'التسويق', salary: 11000, perf: 4.8, attend: 98, join: '2023-08' },
+        { name: 'خالد عبدالله', dept: 'التقنية', salary: 15000, perf: 4.2, attend: 92, join: '2024-01' },
+        { name: 'نورة سعد', dept: 'المبيعات', salary: 10500, perf: 3.8, attend: 88, join: '2025-02' },
+        { name: 'فهد حسن', dept: 'التقنية', salary: 14000, perf: 4.6, attend: 95, join: '2023-11' },
+        { name: 'ريم عمر', dept: 'الإدارة', salary: 9500, perf: 4.1, attend: 97, join: '2024-06' },
+        { name: 'عبدالرحمن يوسف', dept: 'المبيعات', salary: 11500, perf: 4.3, attend: 93, join: '2023-05' },
+        { name: 'لمى فيصل', dept: 'التسويق', salary: 10000, perf: 4.7, attend: 99, join: '2024-09' },
+        { name: 'محمد إبراهيم', dept: 'التقنية', salary: 16000, perf: 4.9, attend: 94, join: '2022-12' },
+        { name: 'هند ناصر', dept: 'الإدارة', salary: 9000, perf: 3.9, attend: 91, join: '2025-01' },
+        { name: 'عمر طارق', dept: 'المبيعات', salary: 12500, perf: 4.4, attend: 96, join: '2024-04' },
+        { name: 'دانا خالد', dept: 'التسويق', salary: 10800, perf: 4.0, attend: 90, join: '2025-03' },
+    ],
+    fin: [
+        { date: '2026-01', type: 'إيراد', cat: 'خدمات استشارية', amount: 120000 },
+        { date: '2026-01', type: 'مصروف', cat: 'رواتب', amount: 85000 },
+        { date: '2026-01', type: 'مصروف', cat: 'إيجار', amount: 15000 },
+        { date: '2026-02', type: 'إيراد', cat: 'مشاريع', amount: 155000 },
+        { date: '2026-02', type: 'مصروف', cat: 'رواتب', amount: 85000 },
+        { date: '2026-02', type: 'مصروف', cat: 'تسويق', amount: 22000 },
+        { date: '2026-03', type: 'إيراد', cat: 'خدمات استشارية', amount: 98000 },
+        { date: '2026-03', type: 'إيراد', cat: 'تدريب', amount: 45000 },
+        { date: '2026-03', type: 'مصروف', cat: 'رواتب', amount: 88000 },
+        { date: '2026-03', type: 'مصروف', cat: 'برمجيات', amount: 12000 },
+        { date: '2026-04', type: 'إيراد', cat: 'مشاريع', amount: 180000 },
+        { date: '2026-04', type: 'مصروف', cat: 'رواتب', amount: 90000 },
+        { date: '2026-04', type: 'مصروف', cat: 'سفر', amount: 8000 },
+        { date: '2026-04', type: 'مصروف', cat: 'إيجار', amount: 15000 },
+    ],
+    admin: [
+        { task: 'تجديد عقد المكتب', type: 'عقود', status: 'مكتمل', priority: 'عالية', due: '2026-01-30' },
+        { task: 'شراء أجهزة لابتوب', type: 'مشتريات', status: 'قيد التنفيذ', priority: 'عالية', due: '2026-02-15' },
+        { task: 'صيانة التكييف', type: 'صيانة', status: 'مكتمل', priority: 'متوسطة', due: '2026-01-20' },
+        { task: 'تحديث نظام الحضور', type: 'تقنية', status: 'متأخر', priority: 'عالية', due: '2026-02-01' },
+        { task: 'تأمين المكتب', type: 'عقود', status: 'مكتمل', priority: 'عالية', due: '2026-03-01' },
+        { task: 'شراء أثاث قاعة الاجتماعات', type: 'مشتريات', status: 'قيد التنفيذ', priority: 'متوسطة', due: '2026-03-20' },
+        { task: 'تجديد اشتراك البرمجيات', type: 'تقنية', status: 'مكتمل', priority: 'عالية', due: '2026-02-28' },
+        { task: 'صيانة المصاعد', type: 'صيانة', status: 'جديد', priority: 'منخفضة', due: '2026-04-15' },
+        { task: 'تنظيم أرشيف الملفات', type: 'إدارة', status: 'قيد التنفيذ', priority: 'منخفضة', due: '2026-04-01' },
+        { task: 'عقد خدمات التنظيف', type: 'عقود', status: 'مكتمل', priority: 'متوسطة', due: '2026-01-10' },
+    ]
+};
+
+// ========================================
+// 🔧 HELPERS
+// ========================================
+let CX = {};
+Chart.defaults.color = '#666';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.03)';
+Chart.defaults.font.family = 'Tajawal';
+
+const CLR = ['#00d4ff','#00e676','#7c3aed','#ff9800','#ff5252','#ffc107','#e040fb','#00bcd4','#8bc34a','#ff6e40'];
+
+function fmt(n) { return new Intl.NumberFormat('ar-SA').format(Math.round(n)); }
+
+function mkChart(id, cfg) {
+    if (CX[id]) CX[id].destroy();
+    const el = document.getElementById(id);
+    if (!el) return;
+    CX[id] = new Chart(el, cfg);
+}
+
+function kpiHTML(icon, label, val, color, sub, change) {
+    return `<div class="kpi">
+        <div class="kpi-icon" style="background:${color}18;color:${color}">
+            <i class="fas fa-${icon}"></i>
+        </div>
+        <div class="kpi-label">${label}</div>
+        <div class="kpi-val" style="color:${color}">${val}</div>
+        ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
+        ${change ? `<div class="kpi-change ${change > 0 ? 'up' : 'down'}">
+            <i class="fas fa-arrow-${change > 0 ? 'up' : 'down'}"></i> ${Math.abs(change)}%
+        </div>` : ''}
+    </div>`;
+}
+
+function countField(arr, field) {
+    const c = {};
+    arr.forEach(r => { const k = r[field] || '?'; c[k] = (c[k]||0) + 1; });
+    return c;
+}
+
+function sumField(arr, group, val) {
+    const s = {};
+    arr.forEach(r => { const k = r[group] || '?'; s[k] = (s[k]||0) + (r[val]||0); });
+    return s;
+}
+
+function avgField(arr, group, val) {
+    const s = {}, c = {};
+    arr.forEach(r => {
+        const k = r[group] || '?';
+        s[k] = (s[k]||0) + (r[val]||0);
+        c[k] = (c[k]||0) + 1;
+    });
+    const a = {};
+    Object.keys(s).forEach(k => a[k] = +(s[k]/c[k]).toFixed(1));
+    return a;
+}
+
+function stBadge(s) {
+    if (!s) return '<span class="stbadge st-blue">-</span>';
+    if (s.includes('مغلق') || s.includes('مكتمل')) return `<span class="stbadge st-green">${s}</span>`;
+    if (s.includes('تفاوض') || s.includes('قيد')) return `<span class="stbadge st-yellow">${s}</span>`;
+    if (s.includes('خاسر') || s.includes('متأخر')) return `<span class="stbadge st-red">${s}</span>`;
+    if (s.includes('جديد')) return `<span class="stbadge st-blue">${s}</span>`;
+    return `<span class="stbadge st-purple">${s}</span>`;
+}
+
+// ========================================
+// 🏢 CEO PAGE
+// ========================================
+function renderCEO() {
+    const d = DEMO.ceo;
+    const icons = ['dollar-sign','hand-holding-usd','user-plus','percentage','smile','envelope','handshake','clock'];
+    const colors = ['#00e676','#ff9800','#00d4ff','#7c3aed','#ffc107','#e040fb','#00e676','#00bcd4'];
+
+    let kH = '';
+    d.forEach((r,i) => {
+        kH += kpiHTML(icons[i], r.kpi, fmt(r.current), colors[i], `الهدف: ${fmt(r.target)}`, Math.round((r.pct - 80)));
+    });
+    document.getElementById('ceo-kpis').innerHTML = kH;
+
+    // Bar
+    mkChart('ceoBar', {
+        type: 'bar',
+        data: {
+            labels: d.map(r=>r.kpi),
+            datasets: [
+                { label: 'الحالي', data: d.map(r=>r.current), backgroundColor: 'rgba(0,212,255,0.75)', borderRadius: 8, barPercentage: 0.5 },
+                { label: 'الهدف', data: d.map(r=>r.target), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 8, barPercentage: 0.5 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            plugins: { legend: { position: 'top', labels: { padding: 20, font: { size: 11 } } } },
+            scales: { x: { grid: { display: false } } }
+        }
+    });
+
+    // Polar
+    mkChart('ceoPolar', {
+        type: 'polarArea',
+        data: {
+            labels: d.map(r=>r.kpi),
+            datasets: [{ data: d.map(r=>r.pct), backgroundColor: CLR.map(c=>c+'88') }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 10 } } },
+            scales: { r: { grid: { color: 'rgba(255,255,255,0.04)' }, max: 100 } }
+        }
+    });
+
+    // Line
+    const months = ['يناير','فبراير','مارس','أبريل'];
+    const rev = [120000, 155000, 143000, 180000];
+    mkChart('ceoLine', {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'الإيرادات', data: rev,
+                borderColor: '#00e676', backgroundColor: 'rgba(0,230,118,0.08)',
+                fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#00e676'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Pie
+    mkChart('ceoPie', {
+        type: 'doughnut',
+        data: {
+            labels: ['المبيعات','التسويق','التقنية','الإدارة'],
+            datasets: [{ data: [35,25,28,12], backgroundColor: ['#00d4ff','#00e676','#7c3aed','#ff9800'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } } }
+        }
+    });
+
+    // Table
+    let t = '<table class="dtable"><thead><tr><th>المؤشر</th><th>الحالي</th><th>الهدف</th><th>الإنجاز %</th></tr></thead><tbody>';
+    d.forEach(r => {
+        const pc = r.pct;
+        const pcColor = pc >= 90 ? '#00e676' : pc >= 70 ? '#ffc107' : '#ff5252';
+        t += `<tr><td style="color:#ddd;font-weight:600">${r.kpi}</td><td>${fmt(r.current)}</td><td>${fmt(r.target)}</td>
+            <td><span style="color:${pcColor};font-weight:700">${pc}%</span></td></tr>`;
+    });
+    t += '</tbody></table>';
+    document.getElementById('ceoTable').innerHTML = t;
+}
+
+// ========================================
+// 📊 OPERATIONS PAGE
+// ========================================
+function renderOps() {
+    const d = DEMO.ops;
+    const totalVal = d.reduce((s,r)=>s+r.value, 0);
+    const closed = d.filter(r=>r.status==='مغلقة').length;
+    const nego = d.filter(r=>r.status==='تفاوض').length;
+    const totalEmails = d.reduce((s,r)=>s+r.emails, 0);
+
+    let kH = '';
+    kH += kpiHTML('users', 'إجمالي العملاء', d.length, '#00d4ff', '', 12);
+    kH += kpiHTML('money-bill-wave', 'قيمة الصفقات', fmt(totalVal), '#00e676', '', 8);
+    kH += kpiHTML('check-circle', 'مغلقة', closed, '#00e676');
+    kH += kpiHTML('comments', 'تفاوض', nego, '#ffc107');
+    kH += kpiHTML('envelope', 'الإيميلات', totalEmails, '#e040fb');
+    kH += kpiHTML('percentage', 'نسبة الإغلاق', Math.round(closed/d.length*100)+'%', '#7c3aed');
+    document.getElementById('ops-kpis').innerHTML = kH;
+
+    // Status
+    const stC = countField(d, 'status');
+    mkChart('opsStatus', {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(stC),
+            datasets: [{ data: Object.values(stC), backgroundColor: ['#00e676','#ffc107','#00d4ff','#ff5252'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 } } } }
+        }
+    });
+
+    // Source
+    const srcC = countField(d, 'source');
+    mkChart('opsSource', {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(srcC),
+            datasets: [{ data: Object.values(srcC), backgroundColor: ['#7c3aed','#00d4ff','#ff9800','#00e676'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 } } } }
+        }
+    });
+
+    // Deals
+    const sorted = [...d].sort((a,b)=>b.value-a.value).slice(0,8);
+    mkChart('opsDeals', {
+        type: 'bar',
+        data: {
+            labels: sorted.map(r=>r.client),
+            datasets: [{
+                data: sorted.map(r=>r.value),
+                backgroundColor: sorted.map((r,i)=> r.status==='مغلقة' ? 'rgba(0,230,118,0.7)' : r.status==='تفاوض' ? 'rgba(255,193,7,0.7)' : 'rgba(0,212,255,0.5)'),
+                borderRadius: 8
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } } }
+        }
+    });
+
+    // Funnel
+    mkChart('opsFunnel', {
+        type: 'bar',
+        data: {
+            labels: ['عملاء جدد','تفاوض','مغلقة','خاسرة'],
+            datasets: [{
+                data: [d.filter(r=>r.status==='جديد').length, nego, closed, d.filter(r=>r.status==='خاسرة').length],
+                backgroundColor: ['#00d4ff','#ffc107','#00e676','#ff5252'],
+                borderRadius: 8
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Table
+    let t = '<table class="dtable"><thead><tr><th>العميل</th><th>الحالة</th><th>القيمة</th><th>المصدر</th><th>الإيميلات</th><th>التاريخ</th></tr></thead><tbody>';
+    d.forEach(r => {
+        t += `<tr><td style="color:#ddd;font-weight:600">${r.client}</td><td>${stBadge(r.status)}</td>
+            <td>${fmt(r.value)} ر.س</td><td>${r.source}</td><td>${r.emails}</td><td>${r.date}</td></tr>`;
+    });
+    t += '</tbody></table>';
+    document.getElementById('opsTable').innerHTML = t;
+}
+
+// ========================================
+// 👥 HR PAGE
+// ========================================
+function renderHR() {
+    const d = DEMO.hr;
+    const totalSal = d.reduce((s,r)=>s+r.salary, 0);
+    const avgPerf = (d.reduce((s,r)=>s+r.perf, 0)/d.length).toFixed(1);
+    const avgAtt = (d.reduce((s,r)=>s+r.attend, 0)/d.length).toFixed(0);
+
+    let kH = '';
+    kH += kpiHTML('user-tie', 'عدد الموظفين', d.length, '#00d4ff');
+    kH += kpiHTML('money-check-alt', 'إجمالي الرواتب', fmt(totalSal)+' ر.س', '#00e676');
+    kH += kpiHTML('star', 'متوسط الأداء', avgPerf+' / 5', '#ff9800');
+    kH += kpiHTML('clock', 'متوسط الحضور', avgAtt+'%', '#7c3aed');
+    document.getElementById('hr-kpis').innerHTML = kH;
+
+    // Dept
+    const deptC = countField(d, 'dept');
+    mkChart('hrDept', {
+        type: 'bar',
+        data: {
+            labels: Object.keys(deptC),
+            datasets: [{ data: Object.values(deptC), backgroundColor: CLR.slice(0,4).map(c=>c+'bb'), borderRadius: 10 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Salary
+    const deptSal = sumField(d, 'dept', 'salary');
+    mkChart('hrSalary', {
+        type: 'bar',
+        data: {
+            labels: Object.keys(deptSal),
+            datasets: [{ data: Object.values(deptSal), backgroundColor: 'rgba(0,230,118,0.7)', borderRadius: 10 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Performance Radar
+    const deptPerf = avgField(d, 'dept', 'perf');
+    mkChart('hrPerf', {
+        type: 'radar',
+        data: {
+            labels: Object.keys(deptPerf),
+            datasets: [{
+                label: 'الأداء', data: Object.values(deptPerf),
+                backgroundColor: 'rgba(255,152,0,0.15)', borderColor: '#ff9800',
+                pointBackgroundColor: '#ff9800', pointRadius: 5
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            scales: { r: { beginAtZero: true, max: 5, grid: { color:'rgba(255,255,255,0.05)' }, angleLines: { color:'rgba(255,255,255,0.05)' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Attendance
+    const deptAtt = avgField(d, 'dept', 'attend');
+    mkChart('hrAttend', {
+        type: 'bar',
+        data: {
+            labels: Object.keys(deptAtt),
+            datasets: [{
+                data: Object.values(deptAtt),
+                backgroundColor: Object.values(deptAtt).map(v => v >= 95 ? 'rgba(0,230,118,0.7)' : v >= 90 ? 'rgba(255,193,7,0.7)' : 'rgba(255,82,82,0.7)'),
+                borderRadius: 10
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { min: 80, max: 100, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Table
+    let t = '<table class="dtable"><thead><tr><th>الموظف</th><th>القسم</th><th>الراتب</th><th>الأداء</th><th>الحضور</th><th>تاريخ الانضمام</th></tr></thead><tbody>';
+    d.forEach(r => {
+        const perfColor = r.perf >= 4.5 ? '#00e676' : r.perf >= 4 ? '#ffc107' : '#ff5252';
+        const attColor = r.attend >= 95 ? '#00e676' : r.attend >= 90 ? '#ffc107' : '#ff5252';
+        t += `<tr><td style="color:#ddd;font-weight:600">${r.name}</td><td>${r.dept}</td>
+            <td>${fmt(r.salary)} ر.س</td>
+            <td><span style="color:${perfColor};font-weight:700">${r.perf}</span> / 5</td>
+            <td><span style="color:${attColor};font-weight:700">${r.attend}%</span></td>
+            <td>${r.join}</td></tr>`;
+    });
+    t += '</tbody></table>';
+    document.getElementById('hrTable').innerHTML = t;
+}
+
+// ========================================
+// 💰 FINANCE PAGE
+// ========================================
+function renderFin() {
+    const d = DEMO.fin;
+    const totalRev = d.filter(r=>r.type==='إيراد').reduce((s,r)=>s+r.amount, 0);
+    const totalExp = d.filter(r=>r.type==='مصروف').reduce((s,r)=>s+r.amount, 0);
+    const profit = totalRev - totalExp;
+
+    let kH = '';
+    kH += kpiHTML('arrow-up', 'الإيرادات', fmt(totalRev)+' ر.س', '#00e676', '', 15);
+    kH += kpiHTML('arrow-down', 'المصاريف', fmt(totalExp)+' ر.س', '#ff5252', '', -3);
+    kH += kpiHTML('balance-scale', 'صافي الربح', fmt(profit)+' ر.س', '#00d4ff');
+    kH += kpiHTML('file-invoice', 'عدد القيود', d.length, '#7c3aed');
+    kH += kpiHTML('percentage', 'هامش الربح', Math.round(profit/totalRev*100)+'%', '#ffc107');
+    document.getElementById('fin-kpis').innerHTML = kH;
+
+    // Revenue vs Expense by month
+    const months = [...new Set(d.map(r=>r.date))];
+    const mRev = months.map(m => d.filter(r=>r.date===m && r.type==='إيراد').reduce((s,r)=>s+r.amount, 0));
+    const mExp = months.map(m => d.filter(r=>r.date===m && r.type==='مصروف').reduce((s,r)=>s+r.amount, 0));
+    const mLabels = months.map(m => { const sp=m.split('-'); return ['','يناير','فبراير','مارس','أبريل'][+sp[1]] || m; });
+
+    mkChart('finRevExp', {
+        type: 'bar',
+        data: {
+            labels: mLabels,
+            datasets: [
+                { label: 'إيرادات', data: mRev, backgroundColor: 'rgba(0,230,118,0.7)', borderRadius: 8 },
+                { label: 'مصاريف', data: mExp, backgroundColor: 'rgba(255,82,82,0.6)', borderRadius: 8 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { padding: 20, font: { size: 12 } } } },
+            scales: { y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Expense distribution
+    const expOnly = d.filter(r=>r.type==='مصروف');
+    const catSum = sumField(expOnly, 'cat', 'amount');
+    mkChart('finExpDist', {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(catSum),
+            datasets: [{ data: Object.values(catSum), backgroundColor: CLR, borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 } } } }
+        }
+    });
+
+    // Profit line
+    const mProfit = months.map((m,i) => mRev[i] - mExp[i]);
+    mkChart('finProfit', {
+        type: 'line',
+        data: {
+            labels: mLabels,
+            datasets: [{
+                label: 'صافي الربح', data: mProfit,
+                borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)',
+                fill: true, tension: 0.4, pointRadius: 6, pointBackgroundColor: '#00d4ff'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Budget
+    const budgets = { 'رواتب': 360000, 'إيجار': 60000, 'تسويق': 30000, 'برمجيات': 20000, 'سفر': 15000 };
+    const actuals = sumField(expOnly, 'cat', 'amount');
+    const bLabels = Object.keys(budgets);
+    mkChart('finBudget', {
+        type: 'bar',
+        data: {
+            labels: bLabels,
+            datasets: [
+                { label: 'الميزانية', data: bLabels.map(k=>budgets[k]/4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 8 },
+                { label: 'الفعلي', data: bLabels.map(k=>actuals[k]||0), backgroundColor: 'rgba(124,58,237,0.7)', borderRadius: 8 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { padding: 20, font: { size: 11 } } } },
+            scales: { y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Table
+    let t = '<table class="dtable"><thead><tr><th>التاريخ</th><th>النوع</th><th>البند</th><th>المبلغ</th></tr></thead><tbody>';
+    d.forEach(r => {
+        const typeColor = r.type==='إيراد' ? '#00e676' : '#ff5252';
+        t += `<tr><td>${r.date}</td><td><span style="color:${typeColor};font-weight:700">${r.type}</span></td>
+            <td>${r.cat}</td><td>${fmt(r.amount)} ر.س</td></tr>`;
+    });
+    t += '</tbody></table>';
+    document.getElementById('finTable').innerHTML = t;
+}
+
+// ========================================
+// 🏢 ADMIN PAGE
+// ========================================
+function renderAdmin() {
+    const d = DEMO.admin;
+    const stC = countField(d, 'status');
+    const tyC = countField(d, 'type');
+    const priC = countField(d, 'priority');
+
+    let kH = '';
+    kH += kpiHTML('clipboard-list', 'إجمالي المهام', d.length, '#00d4ff');
+    kH += kpiHTML('check-circle', 'مكتملة', stC['مكتمل']||0, '#00e676');
+    kH += kpiHTML('spinner', 'قيد التنفيذ', stC['قيد التنفيذ']||0, '#ffc107');
+    kH += kpiHTML('exclamation-circle', 'متأخرة', stC['متأخر']||0, '#ff5252');
+    kH += kpiHTML('plus-circle', 'جديدة', stC['جديد']||0, '#7c3aed');
+    document.getElementById('admin-kpis').innerHTML = kH;
+
+    // Status
+    mkChart('admStatus', {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(stC),
+            datasets: [{ data: Object.values(stC), backgroundColor: ['#00e676','#ffc107','#ff5252','#00d4ff'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 } } } }
+        }
+    });
+
+    // Type
+    mkChart('admType', {
+        type: 'bar',
+        data: {
+            labels: Object.keys(tyC),
+            datasets: [{ data: Object.values(tyC), backgroundColor: CLR.slice(0,5).map(c=>c+'bb'), borderRadius: 10 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Timeline
+    const completedByMonth = {};
+    d.forEach(r => {
+        if (r.status === 'مكتمل') {
+            const m = r.due.substring(0,7);
+            completedByMonth[m] = (completedByMonth[m]||0) + 1;
+        }
+    });
+    const tmLabels = Object.keys(completedByMonth).sort();
+    const tmMonthNames = tmLabels.map(m => {
+        const mm = +m.split('-')[1];
+        return ['','يناير','فبراير','مارس','أبريل','مايو'][mm] || m;
+    });
+    mkChart('admTimeline', {
+        type: 'line',
+        data: {
+            labels: tmMonthNames,
+            datasets: [{
+                label: 'مهام مكتملة', data: tmLabels.map(m=>completedByMonth[m]),
+                borderColor: '#00e676', backgroundColor: 'rgba(0,230,118,0.1)',
+                fill: true, tension: 0.4, pointRadius: 6, pointBackgroundColor: '#00e676'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color:'rgba(255,255,255,0.03)' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // Priority
+    mkChart('admPriority', {
+        type: 'polarArea',
+        data: {
+            labels: Object.keys(priC),
+            datasets: [{ data: Object.values(priC), backgroundColor: ['#ff525288','#ffc10788','#00e67688'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 12 } } } },
+            scales: { r: { grid: { color:'rgba(255,255,255,0.04)' } } }
+        }
+    });
+
+    // Table
+    let t = '<table class="dtable"><thead><tr><th>المهمة</th><th>النوع</th><th>الحالة</th><th>الأولوية</th><th>تاريخ التسليم</th></tr></thead><tbody>';
+    d.forEach(r => {
+        const priColor = r.priority==='عالية' ? '#ff5252' : r.priority==='متوسطة' ? '#ffc107' : '#00e676';
+        t += `<tr><td style="color:#ddd;font-weight:600">${r.task}</td><td>${r.type}</td>
+            <td>${stBadge(r.status)}</td>
+            <td><span style="color:${priColor};font-weight:700">${r.priority}</span></td>
+            <td>${r.due}</td></tr>`;
+    });
+    t += '</tbody></table>';
+    document.getElementById('adminTable').innerHTML = t;
+}
+
+// ========================================
+// 🧭 NAV + LOAD
+// ========================================
+function go(page, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('pg-' + page).classList.add('active');
+    if (el) el.classList.add('active');
+}
+
+function refreshAll() {
+    document.getElementById('loader').classList.remove('hide');
+    setTimeout(() => {
+        renderCEO();
+        renderOps();
+        renderHR();
+        renderFin();
+        renderAdmin();
+        const now = new Date();
+        document.getElementById('updateTime').textContent =
+            now.toLocaleDateString('ar-SA') + ' ' + now.toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit' });
+        setTimeout(() => document.getElementById('loader').classList.add('hide'), 400);
+    }, 600);
+}
+
+// Auto refresh 5 min
+setInterval(refreshAll, 5 * 60 * 1000);
+
+// Init
+window.addEventListener('load', () => refreshAll());
+</script>
+
+</body>
+</html>
